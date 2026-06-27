@@ -17,13 +17,16 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install playwright
           playwright install chromium
-          playwright install-deps
+          # تثبيت المكتبات النظامية لـ Linux
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxi6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2 libatk1.0-0 libgtk-3-0
 
       - name: Run scraper
-        # إضافة xvfb-run هي الحل لمشكلة Missing X server
-        run: xvfb-run python scraper.py
+        # تشغيل السكربت مباشرة بدون xvfb لأننا ثبتنا المكتبات المطلوبة أعلاه
+        run: python scraper.py
 
       - name: Commit and push changes
         run: |
