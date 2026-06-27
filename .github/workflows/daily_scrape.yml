@@ -2,8 +2,8 @@ name: Daily SBL Scraper
 
 on:
   schedule:
-    - cron: '0 8 * * *' # يعمل يومياً الساعة 8 صباحاً
-  workflow_dispatch: # يسمح لك بتشغيله يدوياً في أي وقت بضغطة زر
+    - cron: '0 8 * * *'
+  workflow_dispatch:
 
 jobs:
   scrape:
@@ -21,6 +21,7 @@ jobs:
         run: |
           pip install playwright
           playwright install chromium
+          playwright install-deps
 
       - name: Run scraper
         run: python scraper.py
