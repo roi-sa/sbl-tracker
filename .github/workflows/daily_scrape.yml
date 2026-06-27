@@ -7,28 +7,20 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install playwright
           playwright install chromium
-          # تثبيت المكتبات النظامية لـ Linux
+          # المكتبات الأساسية لتشغيل الكروم في بيئة لينكس بدون شاشة
           sudo apt-get update
           sudo apt-get install -y libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxi6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2 libatk1.0-0 libgtk-3-0
-
-      - name: Run scraper
-        # تشغيل السكربت مباشرة بدون xvfb لأننا ثبتنا المكتبات المطلوبة أعلاه
+      - name: Run
         run: python scraper.py
-
-      - name: Commit and push changes
+      - name: Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
