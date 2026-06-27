@@ -1,8 +1,6 @@
 name: Daily SBL Scraper
 
 on:
-  schedule:
-    - cron: '0 8 * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,10 +19,12 @@ jobs:
         run: |
           pip install playwright
           playwright install chromium
+          # تثبيت المكتبات اللازمة للتشغيل بدون واجهة
           playwright install-deps
 
       - name: Run scraper
-        run: python scraper.py
+        # الحل هنا: تشغيل السكربت عبر شاشة وهمية xvfb
+        run: xvfb-run python scraper.py
 
       - name: Commit and push changes
         run: |
