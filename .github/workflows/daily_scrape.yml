@@ -7,20 +7,26 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
+
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install playwright
+          # هذا السطر هو الحل الجذري لتثبيت كافة مكتبات المتصفح المطلوبة
           playwright install chromium
-          # المكتبات الأساسية لتشغيل الكروم في بيئة لينكس بدون شاشة
-          sudo apt-get update
-          sudo apt-get install -y libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxi6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2 libatk1.0-0 libgtk-3-0
-      - name: Run
+          playwright install-deps
+
+      - name: Run scraper
         run: python scraper.py
-      - name: Push
+
+      - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
