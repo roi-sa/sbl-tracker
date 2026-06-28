@@ -1,28 +1,32 @@
-import requests
+import asyncio
+from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 import json
 
-def run():
-    url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-    }
-    
-    try:
-        response = requests.get(url, headers=headers, timeout=30)
-        response.raise_for_status()
+async def run():
+    async with async_playwright() as p:
+        # تشغيل متصفح كروم حقيقي
+        browser = await p.chromium.launch(headless=True)
+        # تعريف سياق يشبه متصفح مستخدم حقيقي
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        )
+        page = await context.new_page()
         
-        # استخدام BeautifulSoup لتحليل الـ HTML الذي أرسلته أنت
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # الانتقال للصفحة
+        await page.goto("https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html", timeout=60000)
         
-        # استهداف الجدول بناءً على الكلاس الموجود في الكود الذي أرفقته
-        table = soup.find('table', {'class': 'table table-striped table-bordered'})
+        # انتظار تحميل الجدول تحديداً
+        await page.wait_for_selector("table.table-striped")
         
+        content = await page.content()
+        soup = BeautifulSoup(content, 'html.parser')
+        
+        # استخراج البيانات
+        table = soup.find('table', {'class': 'table table-striped'})
         data = []
         if table:
-            # استخراج الصفوف من الـ tbody
-            tbody = table.find('tbody')
-            rows = tbody.find_all('tr')
+            rows = table.find('tbody').find_all('tr')
             for row in rows:
                 cols = row.find_all('td')
                 if len(cols) >= 5:
@@ -34,13 +38,10 @@ def run():
                         "loan_ratio": cols[4].get_text(strip=True)
                     })
         
-        # حفظ البيانات
+        await browser.close()
+        
         with open("data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-        print(f"✅ نجاح! تم استخراج {len(data)} شركة.")
-        
-    except Exception as e:
-        print(f"❌ خطأ: {e}")
 
 if __name__ == "__main__":
-    run()
+    asyncio.run(run())
