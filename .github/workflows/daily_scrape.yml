@@ -12,10 +12,12 @@ jobs:
       
       - name: Run scraper
         run: |
-          # مسح أي آثار لملفات قديمة (Cache)
+          # مسح كامل وشامل لأي بقايا سابقة
           find . -name "*.pyc" -delete
           rm -rf __pycache__
-          # تشغيل السكربت المحدث
+          # التأكد من إعداد المتغير ليكون true
+          export HEADLESS=true
+          # تنفيذ الملف
           python3 scraper.py
         
       - name: Commit and push
