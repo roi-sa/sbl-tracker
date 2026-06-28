@@ -1,25 +1,27 @@
 from playwright.sync_api import sync_playwright
 import json
-import time
 
 def run():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        # استخدام Firefox بدلاً من Chromium لتجاوز حظر البوتات
+        browser = p.firefox.launch(headless=True)
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0"
         )
         page = context.new_page()
-        page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
         url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
-        page.goto(url)
         
-        # الانتظار حتى ظهور صف واحد على الأقل داخل الجدول
-        page.wait_for_selector("table tr:nth-child(2)", timeout=60000)
-        time.sleep(5) # انتظار إضافي لضمان اكتمال كل الخلايا
+        # محاولة تحميل الصفحة
+        page.goto(url, wait_until="domcontentloaded")
         
+        # بدلاً من الانتظار المعقد، ننتظر فقط ظهور أي نص في الصفحة
+        page.wait_for_timeout(10000)
+        
+        # استخراج البيانات مباشرة
         data = page.evaluate('''() => {
             const table = document.querySelector('table');
+            if (!table) return [];
             const rows = Array.from(table.querySelectorAll('tr'));
             return rows.slice(1).map(row => {
                 const cols = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
@@ -30,7 +32,7 @@ def run():
                     "loaned_quantity": cols[3], 
                     "loan_ratio": cols[4] 
                 };
-            }).filter(item => item.symbol); 
+            }).filter(item => item.symbol);
         }''')
         
         with open("data.json", "w", encoding="utf-8") as f:
