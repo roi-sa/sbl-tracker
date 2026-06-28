@@ -1,37 +1,52 @@
-from playwright.sync_api import sync_playwright
+import requests
+from bs4 import BeautifulSoup
 import json
+import time
 
 def run():
-    with sync_playwright() as p:
-        # تشغيل المتصفح مع إعدادات تخفي
-        browser = p.chromium.launch(headless=True)
-        # تحديد User-Agent لمتصفح كروم حقيقي
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-        )
-        page = context.new_page()
+    url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
+    
+    # محاكاة متصفح حقيقي بالكامل
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Referer": "https://www.saudiexchange.sa/",
+        "Accept-Language": "ar-SA,ar;q=0.9,en-US;q=0.8,en;q=0.7"
+    }
+    
+    try:
+        # إضافة تأخير بسيط لمحاكاة التصفح البشري
+        time.sleep(2)
         
-        try:
-            # زيارة الموقع
-            page.goto("https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html", wait_until="networkidle", timeout=60000)
+        response = requests.get(url, headers=headers, timeout=30)
+        
+        # إذا نجح الطلب، سنحلل البيانات
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            table = soup.find('table', {'class': 'table table-striped table-bordered'})
             
-            # الانتظار حتى ظهور الجدول
-            page.wait_for_selector("table", timeout=30000)
+            data = []
+            if table:
+                rows = table.find('tbody').find_all('tr')
+                for row in rows:
+                    cols = row.find_all('td')
+                    if len(cols) >= 5:
+                        data.append({
+                            "symbol": cols[0].get_text(strip=True),
+                            "name": cols[1].get_text(strip=True),
+                            "total_issued": cols[2].get_text(strip=True),
+                            "loaned_quantity": cols[3].get_text(strip=True),
+                            "loan_ratio": cols[4].get_text(strip=True)
+                        })
             
-            # استخراج محتوى الصفحة
-            html_content = page.content()
+            with open("data.json", "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            print(f"✅ تم سحب {len(data)} شركة.")
+        else:
+            print(f"❌ الموقع رفض الطلب بـ status code: {response.status_code}")
             
-            # (هنا يمكنك إضافة كود BeautifulSoup لتحليل html_content)
-            # لحفظ الملف مؤقتاً للتأكد من نجاح الوصول:
-            with open("debug_page.html", "w", encoding="utf-8") as f:
-                f.write(html_content)
-                
-            print("✅ تم الوصول للصفحة بنجاح.")
-            
-        except Exception as e:
-            print(f"❌ فشل الوصول: {e}")
-        finally:
-            browser.close()
+    except Exception as e:
+        print(f"❌ حدث خطأ: {e}")
 
 if __name__ == "__main__":
     run()
