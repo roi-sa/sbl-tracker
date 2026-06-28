@@ -3,8 +3,8 @@ import json
 
 def run():
     with sync_playwright() as p:
-        # هذا السطر صحيح تماماً ولا يحتاج تغيير
-        browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"])
+        # هذا هو السطر المقصود، هو موجود هكذا داخل الكود
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
         )
@@ -12,8 +12,6 @@ def run():
         page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
         url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
-        print("جاري الدخول وسحب البيانات...")
-        
         page.goto(url, wait_until="networkidle")
         page.wait_for_timeout(5000)
         
@@ -34,8 +32,6 @@ def run():
         
         with open("data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-            
-        print("✅ تم بنجاح.")
         browser.close()
 
 if __name__ == "__main__":
