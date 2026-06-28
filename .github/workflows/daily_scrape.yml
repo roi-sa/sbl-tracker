@@ -6,27 +6,14 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.44.0-jammy
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: |
-          pip install playwright
-          playwright install chromium
-          # تثبيت المكتبات اللازمة لبيئة Linux
-          playwright install-deps
-
+      - uses: actions/checkout@v4
+      
       - name: Run scraper
-        # xvfb-run هي التي ستنشئ الشاشة الوهمية التي يطلبها المتصفح
-        run: xvfb-run python scraper.py
-
-      - name: Commit and push changes
+        run: python3 scraper.py
+        
+      - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
