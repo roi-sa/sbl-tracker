@@ -1,0 +1,22 @@
+name: Main SBL Scraper
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.44.0-jammy
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run script
+        run: python3 run_sbl.py
+        
+      - name: Commit and push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git commit -m "Update SBL data" || echo "No changes"
+          git push
