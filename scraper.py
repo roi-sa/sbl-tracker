@@ -1,16 +1,20 @@
-from playwright.sync_api import sync_playwright
+import os
 import json
+from playwright.sync_api import sync_playwright
 
 def run():
     print("--- بدأ تنفيذ السكربت ---")
+    # إجبار المتصفح على العمل بدون واجهة رسومية بقوة
+    os.environ["HEADLESS"] = "true" 
+    
     with sync_playwright() as p:
-        # هذه القيمة هي التي سيتم تنفيذها بعد حذف الـ cache
         browser = p.chromium.launch(headless=True)
+        print("--- تم إطلاق المتصفح (headless=True) بنجاح ---")
+        
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
         )
         page = context.new_page()
-        page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
         url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
         page.goto(url, wait_until="networkidle")
@@ -34,7 +38,7 @@ def run():
         with open("data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
         browser.close()
-        print("✅ تم الانتهاء بنجاح.")
+        print("✅ تم الحفظ بنجاح.")
 
 if __name__ == "__main__":
     run()
