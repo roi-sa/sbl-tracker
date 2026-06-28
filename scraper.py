@@ -2,18 +2,17 @@ from playwright.sync_api import sync_playwright
 import json
 
 def run():
+    print("--- يبدأ السكربت الآن ---")
     with sync_playwright() as p:
-        # هذا هو السطر المقصود، هو موجود هكذا داخل الكود
+        # إجبار المتصفح على وضع headless=True هنا مباشرة
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-        )
+        print("--- تم إطلاق المتصفح بنجاح ---")
+        
+        context = browser.new_context()
         page = context.new_page()
-        page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
         url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
         page.goto(url, wait_until="networkidle")
-        page.wait_for_timeout(5000)
         
         data = page.evaluate('''() => {
             const table = document.querySelector('table');
@@ -32,7 +31,9 @@ def run():
         
         with open("data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
+        
         browser.close()
+        print("✅ انتهى السكربت بنجاح.")
 
 if __name__ == "__main__":
     run()
