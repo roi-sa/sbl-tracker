@@ -1,35 +1,38 @@
-name: Main SBL Scraper
+name: Run SBL Script
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # يعمل يومياً
+  workflow_dispatch: # يتيح لك تشغيله يدوياً من زر Run workflow
 
 jobs:
-  scrape:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    # هنا الصلاحية التي تحل مشكلة الـ 403
+    permissions:
+      contents: write
       
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-          
+
       - name: Install dependencies
         run: |
           pip install playwright
           playwright install chromium
-          
+
       - name: Run script
-        run: python3 run_sbl.py
-        
+        run: python run_sbl.py
+
       - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -f "data.json" ]; then
-            git add data.json
-            git commit -m "Update SBL data"
-            git push
-          else
-            echo "data.json not found, skipping commit."
-          fi
+          git add data.json
+          git commit -m "Update SBL data"
+          git push
