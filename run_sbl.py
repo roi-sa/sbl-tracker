@@ -1,39 +1,51 @@
-from playwright.sync_api import sync_playwright
+import requests
+from bs4 import BeautifulSoup
 import json
 
 def run():
-    with sync_playwright() as p:
-        # استخدام متصفح Chromium بخصائص إخفاء كاملة
-        browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"])
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-        )
-        page = context.new_page()
+    # الرابط المستهدف
+    url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
+    
+    # تعريف المتصفح لمحاكاة الطلب كإنسان
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    }
+    
+    try:
+        # جلب الصفحة
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
         
-        # حقن سكربت إخفاء الأتمتة (يمنع كشف البوت)
-        page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        # تحليل الصفحة
+        soup = BeautifulSoup(response.text, 'html.parser')
         
-        url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
-        page.goto(url, wait_until="networkidle")
+        # البحث عن الجدول
+        table = soup.find('table')
+        if not table:
+            print("لم يتم العثور على الجدول في صفحة الـ HTML")
+            return
+
+        # استخراج البيانات
+        rows = table.find_all('tr')
+        data = []
+        for row in rows[1:]: # تخطي صف العناوين
+            cols = row.find_all('td')
+            if len(cols) >= 5:
+                data.append({
+                    "symbol": cols[0].text.strip(),
+                    "name": cols[1].text.strip(),
+                    "total_issued": cols[2].text.strip(),
+                    "loaned_quantity": cols[3].text.strip(),
+                    "loan_ratio": cols[4].text.strip()
+                })
         
-        # انتظار وجود الجدول
-        page.wait_for_selector("table")
-        
-        data = page.evaluate('''() => {
-            const table = document.querySelector('table');
-            const rows = Array.from(table.querySelectorAll('tr'));
-            return rows.slice(1).map(row => {
-                const cols = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
-                return { 
-                    "symbol": cols[0], "name": cols[1], "total_issued": cols[2], 
-                    "loaned_quantity": cols[3], "loan_ratio": cols[4] 
-                };
-            }).filter(item => item.symbol);
-        }''')
-        
+        # حفظ النتائج
         with open("data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
-        browser.close()
+        print(f"✅ تم سحب {len(data)} صف وحفظ البيانات في data.json")
+
+    except Exception as e:
+        print(f"حدث خطأ: {e}")
 
 if __name__ == "__main__":
     run()
