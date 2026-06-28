@@ -1,29 +1,21 @@
-import asyncio
-from playwright.async_api import async_playwright
+import cloudscraper
 from bs4 import BeautifulSoup
 import json
 
-async def run():
-    async with async_playwright() as p:
-        # تشغيل متصفح كروم حقيقي
-        browser = await p.chromium.launch(headless=True)
-        # تعريف سياق يشبه متصفح مستخدم حقيقي
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-        )
-        page = await context.new_page()
+def run():
+    # استخدام cloudscraper لتجاوز حماية الـ Bot
+    scraper = cloudscraper.create_scraper()
+    url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
+    
+    try:
+        response = scraper.get(url, timeout=30)
+        response.raise_for_status()
         
-        # الانتقال للصفحة
-        await page.goto("https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html", timeout=60000)
+        soup = BeautifulSoup(response.text, 'html.parser')
         
-        # انتظار تحميل الجدول تحديداً
-        await page.wait_for_selector("table.table-striped")
-        
-        content = await page.content()
-        soup = BeautifulSoup(content, 'html.parser')
-        
-        # استخراج البيانات
+        # استخراج الجدول
         table = soup.find('table', {'class': 'table table-striped'})
+        
         data = []
         if table:
             rows = table.find('tbody').find_all('tr')
@@ -38,10 +30,12 @@ async def run():
                         "loan_ratio": cols[4].get_text(strip=True)
                     })
         
-        await browser.close()
-        
         with open("data.json", "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
+        print(f"✅ تم سحب {len(data)} شركة بنجاح.")
+        
+    except Exception as e:
+        print(f"❌ حدث خطأ: {e}")
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    run()
