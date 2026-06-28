@@ -1,48 +1,38 @@
 import requests
-from bs4 import BeautifulSoup
 import json
 
 def run():
-    # الرابط المستهدف
-    url = "https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html"
+    # هذا الرابط هو المصدر الفعلي للبيانات (JSON API)
+    url = "https://www.saudiexchange.sa/wps/portal/saudiexchange/hiddenwebservices/display-sbl-report"
     
-    # تعريف المتصفح لمحاكاة الطلب كإنسان
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Referer": "https://www.saudiexchange.sa/"
     }
     
     try:
-        # جلب الصفحة
         response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         
-        # تحليل الصفحة
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # تحويل البيانات إلى تنسيق JSON
+        data = response.json()
         
-        # البحث عن الجدول
-        table = soup.find('table')
-        if not table:
-            print("لم يتم العثور على الجدول في صفحة الـ HTML")
-            return
-
-        # استخراج البيانات
-        rows = table.find_all('tr')
-        data = []
-        for row in rows[1:]: # تخطي صف العناوين
-            cols = row.find_all('td')
-            if len(cols) >= 5:
-                data.append({
-                    "symbol": cols[0].text.strip(),
-                    "name": cols[1].text.strip(),
-                    "total_issued": cols[2].text.strip(),
-                    "loaned_quantity": cols[3].text.strip(),
-                    "loan_ratio": cols[4].text.strip()
+        # استخراج القائمة المحددة من البيانات
+        final_data = []
+        if 'sblReportList' in data:
+            for item in data['sblReportList']:
+                final_data.append({
+                    "symbol": item.get('symbol', ''),
+                    "name": item.get('securityName', ''),
+                    "total_issued": item.get('totalIssuedShares', ''),
+                    "loaned_quantity": item.get('loanedQuantity', ''),
+                    "loan_ratio": item.get('loanRatio', '')
                 })
         
-        # حفظ النتائج
+        # حفظ الملف
         with open("data.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        print(f"✅ تم سحب {len(data)} صف وحفظ البيانات في data.json")
+            json.dump(final_data, f, ensure_ascii=False, indent=4)
+        print(f"✅ تم سحب {len(final_data)} صف بنجاح.")
 
     except Exception as e:
         print(f"حدث خطأ: {e}")
