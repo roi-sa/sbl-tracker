@@ -1,8 +1,4 @@
-name: Run SBL Script
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright
 import json
 
 def run():
@@ -39,27 +35,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: |
-          pip install cloudscraper beautifulsoup4
-      - name: Run script
-        run: python run_sbl.py
-      - name: Commit and push
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json
-          git commit -m "Update SBL data" || echo "No changes to commit"
-          git push
