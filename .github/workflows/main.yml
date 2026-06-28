@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -15,8 +17,7 @@ jobs:
           python-version: '3.9'
       - name: Install dependencies
         run: |
-          pip install playwright beautifulsoup4
-          playwright install chromium
+          pip install cloudscraper beautifulsoup4
       - name: Run script
         run: python run_sbl.py
       - name: Commit and push
