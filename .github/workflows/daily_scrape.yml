@@ -1,7 +1,5 @@
 name: Daily SBL Scraper
-
-on:
-  workflow_dispatch:
+on: workflow_dispatch
 
 jobs:
   scrape:
@@ -10,37 +8,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Run script directly
-        shell: python
+      - name: Run script
         run: |
-          from playwright.sync_api import sync_playwright
-          import json
-          
-          with sync_playwright() as p:
-              # إجبار الوضع الصامت هنا
-              browser = p.chromium.launch(headless=True)
-              context = browser.new_context()
-              page = context.new_page()
-              page.goto("https://www.saudiexchange.sa/Resources/Reports-v2/SBLReport_ar.html", wait_until="networkidle")
-              page.wait_for_timeout(5000)
-              
-              data = page.evaluate('''() => {
-                  const table = document.querySelector('table');
-                  const rows = Array.from(table.querySelectorAll('tr'));
-                  return rows.slice(1).map(row => {
-                      const cols = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
-                      return { "symbol": cols[0], "name": cols[1], "total_issued": cols[2], "loaned_quantity": cols[3], "loan_ratio": cols[4] };
-                  });
-              }''')
-              
-              with open("data.json", "w", encoding="utf-8") as f:
-                  json.dump(data, f, ensure_ascii=False, indent=4)
-              browser.close()
+          # مسح كل شيء
+          find . -name "*.pyc" -delete
+          rm -rf __pycache__
+          # تشغيل الاسم الجديد
+          python3 run_sbl.py
         
-      - name: Commit and push
+      - name: Commit
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data.json
-          git commit -m "Update SBL data" || echo "No changes"
+          git commit -m "Update SBL" || echo "No changes"
           git push
