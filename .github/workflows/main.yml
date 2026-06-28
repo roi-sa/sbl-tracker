@@ -6,10 +6,19 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.44.0-jammy
     steps:
       - uses: actions/checkout@v4
       
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          pip install playwright
+          playwright install chromium
+          
       - name: Run script
         run: python3 run_sbl.py
         
