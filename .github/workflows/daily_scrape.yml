@@ -8,20 +8,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
+        # تم التحديث إلى v4 للتوافق مع Node.js 24
         uses: actions/checkout@v4
 
       - name: Set up Python
+        # تم التحديث إلى v5
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install playwright
-          # هذا السطر هو الحل الجذري لتثبيت كافة مكتبات المتصفح المطلوبة
           playwright install chromium
-          playwright install-deps
+          # تثبيت المكتبات اللازمة للعمل بدون شاشة (هذا يحل خطأ Missing X server)
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxi6 libxtst6 libnss3 libcups2 libxss1 libxrandr2 libasound2 libatk1.0-0 libgtk-3-0
 
       - name: Run scraper
         run: python scraper.py
